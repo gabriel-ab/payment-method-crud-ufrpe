@@ -1,0 +1,12 @@
+[project]
+name = "payment-method-crud-ufrpe"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "fastapi[standard]>=0.116.0",
+    "fastcrud>=0.15.12",
+    "sqlalchemy>=2.0.41",
+]
