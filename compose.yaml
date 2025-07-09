@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "80:8000"
+      - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+psycopg://postgres:password@db:5432/postgres
     depends_on:
