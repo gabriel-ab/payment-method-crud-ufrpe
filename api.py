@@ -3,31 +3,41 @@ from uuid import UUID, uuid4
 import os
 
 from fastapi import FastAPI, HTTPException, Depends, status
-from pydantic import ValidationError
+from pydantic import create_model, ValidationError
 from sqlmodel import SQLModel, Field, create_engine, select, Session
 from contextlib import asynccontextmanager
 
+def patch(model: type[SQLModel]) -> type[SQLModel]:
+    fields = model.model_fields.copy()
+    for f in fields.values():
+        f.required = False
+        f.default = None
 
-class CreatePaymentMethod(SQLModel):
-    user: UUID
+    return create_model(
+        f"{model.__name__}Optional",
+        **{n: (Optional[f.annotation], f) for n, f in fields.items()}
+    )
+
+class PaymentMethodBase(SQLModel):
     owner_name: str = Field(max_length=100, description="Name of the card owner")
-    card_number: str = Field(min_length=16, max_length=16, description="16-digit card number")
-    expiration_date: str = Field(max_length=7, regex="\d{2}/\d{4}", description="MM/YYYY format")
+    card_number: str = Field(min_length=16, max_length=16, description="16-digit card number", schema_extra=dict(pattern="\d{16}"))
+    expiration_date: str = Field(max_length=7, description="MM/YYYY format", schema_extra=dict(pattern="\d{2}/\d{4}"))
     security_code: str = Field(min_length=3, max_length=3, description="3-digit security code")
 
 
-class PaymentMethod(CreatePaymentMethod, table=True):
-    uuid: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+class PaymentMethodCreate(PaymentMethodBase):
+    user: UUID = Field(index=True, description="UUID of the user")
 
 
-class PatchPaymentMethod(SQLModel):
-    owner_name: Optional[str] = None
-    card_number: Optional[str] = None
-    expiration_date: Optional[str] = None
-    security_code: Optional[str] = None
+class PaymentMethodPatch(patch(PaymentMethodBase)):
+    pass
+
+class PaymentMethod(PaymentMethodCreate, table=True):
+    uuid: UUID = Field(default_factory=uuid4, primary_key=True, index=True, description="Unique identifier for the payment method")
 
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///:memory:")
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
 engine = create_engine(DATABASE_URL, echo=True)
 
 
@@ -48,7 +58,7 @@ app = FastAPI(
 
 
 @app.post("/payment_method", response_model=PaymentMethod, status_code=status.HTTP_201_CREATED)
-def create_payment_method(payment: CreatePaymentMethod, session: Session = Depends(get_session)):
+def create_payment_method(payment: PaymentMethodCreate, session: Session = Depends(get_session)):
     db_payment = PaymentMethod.model_validate(payment)
     session.add(db_payment)
     session.commit()
@@ -64,7 +74,7 @@ def read_payment_methods(user: UUID, session: Session = Depends(get_session)):
 
 @app.patch("/payment_method", response_model=PaymentMethod)
 def update_payment_method(
-    user: UUID, uuid: UUID, payment_update: PatchPaymentMethod, session: Session = Depends(get_session)
+    user: UUID, uuid: UUID, payment_update: PaymentMethodPatch, session: Session = Depends(get_session)
 ):
     payment = session.get(PaymentMethod, uuid)
     if not payment or payment.user != user:
