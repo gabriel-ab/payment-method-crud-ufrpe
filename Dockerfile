@@ -1,4 +1,4 @@
-FROM python:3.13-alpine
+FROM python:3.13-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY api.py pyproject.toml uv.lock ./
 
-RUN uv sync 
+RUN uv sync --extra prod
 
 ENV PATH=/app/.venv/bin:$PATH
 

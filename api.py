@@ -20,9 +20,9 @@ def patch(model: type[SQLModel]) -> type[SQLModel]:
 
 class PaymentMethodBase(SQLModel):
     owner_name: str = Field(max_length=100, description="Name of the card owner")
-    card_number: str = Field(min_length=16, max_length=16, description="16-digit card number", schema_extra=dict(pattern="\d{16}"))
-    expiration_date: str = Field(max_length=7, description="MM/YYYY format", schema_extra=dict(pattern="\d{2}/\d{4}"))
-    security_code: str = Field(min_length=3, max_length=3, description="3-digit security code")
+    card_number: str = Field(min_length=16, max_length=16, description="16-digit card number", schema_extra=dict(pattern=r"\d{16}"))
+    expiration_date: str = Field(min_length=7, max_length=7, description="MM/YYYY format", schema_extra=dict(pattern=r"\d{2}/\d{4}"))
+    security_code: str = Field(min_length=3, max_length=3, description="3-digit security code", schema_extra=dict(pattern=r"\d{3}"))
 
 
 class PaymentMethodCreate(PaymentMethodBase):
