@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 import os
 
 from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import create_model, ValidationError
 from sqlmodel import SQLModel, Field, create_engine, select, Session
 from contextlib import asynccontextmanager
@@ -59,6 +60,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Payment Method API", description="API for managing payment methods", version="1.0.0", lifespan=lifespan
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
