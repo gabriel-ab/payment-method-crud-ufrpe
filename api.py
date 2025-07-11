@@ -1,4 +1,5 @@
 from typing import Optional
+from enum import StrEnum
 from uuid import UUID, uuid4
 import os
 
@@ -19,6 +20,10 @@ def patch(model: type[SQLModel]) -> type[SQLModel]:
     )
 
 class PaymentMethodBase(SQLModel):
+    class PaymentType(StrEnum):
+        CREDIT = "credit"
+        DEBIT = "debit"
+    payment_type: PaymentType = Field(description="Type of payment method")
     owner_name: str = Field(max_length=100, description="Name of the card owner")
     card_number: str = Field(min_length=16, max_length=16, description="16-digit card number", schema_extra=dict(pattern=r"\d{16}"))
     expiration_date: str = Field(min_length=7, max_length=7, description="MM/YYYY format", schema_extra=dict(pattern=r"\d{2}/\d{4}"))
